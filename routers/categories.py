@@ -5,17 +5,23 @@ from sqlalchemy.future import select
 from database import get_session
 import models
 import schemas
+from services.storage import BaseCRUD
 
 router = APIRouter()
 
 
 @router.post("/", response_model=schemas.CategoryRead)
 async def create_category(category: schemas.CategoryCreate, session: AsyncSession = Depends(get_session)):
-    db_category = models.Category(**category.model_dump())
-    session.add(db_category)
-    await session.commit()
-    await session.refresh(db_category)
+    crud = BaseCRUD(models.Category)
+    db_category = await crud.create(session, category.model_dump())
     return db_category
+
+
+@router.get("/", response_model=list[schemas.CategoryRead])
+async def read_categories(session: AsyncSession = Depends(get_session)):
+    crud = BaseCRUD(models.Category)
+    categories = await crud.get_all(session)
+    return categories
 
 
 @router.get("/{category_id}", response_model=schemas.CategoryRead)

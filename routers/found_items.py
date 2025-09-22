@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from database import get_session
 from utils import get_object_or_404
+from services.storage import BaseCRUD
 
 router = APIRouter()
 
@@ -20,8 +21,8 @@ async def create_found_item(item: schemas.FoundItemCreate, session: AsyncSession
 
 @router.get("/", response_model=list[schemas.FoundItem])
 async def read_found_items(session: AsyncSession = Depends(get_session)):
-    result = await session.execute(select(models.FoundItem))
-    items = result.scalars().all()
+    crud = BaseCRUD(models.FoundItem)
+    items = await crud.get_all(session)
     return items
 
 
