@@ -26,8 +26,8 @@ async def read_categories(session: AsyncSession = Depends(get_session)):
 
 @router.get("/{category_id}", response_model=schemas.CategoryRead)
 async def read_category(category_id: int, session: AsyncSession = Depends(get_session)):
-    category = await session.execute(select(models.Category).where(models.Category.id == category_id))
-    category = category.scalar_one_or_none()
+    crud = BaseCRUD(models.Category)
+    category = await crud.get_by_id(session, category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     return category
@@ -36,16 +36,10 @@ async def read_category(category_id: int, session: AsyncSession = Depends(get_se
 @router.put("/{category_id}", response_model=schemas.CategoryRead)
 async def update_category(category_id: int, category_update: schemas.CategoryUpdate,
                           session: AsyncSession = Depends(get_session)):
-    category = await session.execute(select(models.Category).where(models.Category.id == category_id))
-    category = category.scalar_one_or_none()
+    crud = BaseCRUD(models.Category)
+    category = await crud.update(session, category_id, category_update.model_dump(exclude_unset=True))
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-
-    for key, value in category_update.model_dump(exclude_unset=True).items():
-        setattr(category, key, value)
-
-    await session.commit()
-    await session.refresh(category)
     return category
 
 

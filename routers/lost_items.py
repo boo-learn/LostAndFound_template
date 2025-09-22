@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from database import get_session
 from utils import get_object_or_404
+from services.storage import BaseCRUD
 
 router = APIRouter()
 
@@ -17,11 +18,16 @@ async def create_lost_item(item: schemas.LostItemCreate, session: AsyncSession =
     await session.refresh(db_item)
     return db_item
 
-
+# GET: lost_items?skip=10&limit=15
 @router.get("/", response_model=list[schemas.LostItem])
-async def read_lost_items(session: AsyncSession = Depends(get_session)):
-    result = await session.execute(select(models.LostItem))
-    items = result.scalars().all()
+async def read_lost_items(
+        skip: int=0, limit: int=20,
+        session: AsyncSession = Depends(get_session)
+):
+    crud = BaseCRUD(models.LostItem)
+    items = crud.get_all(session, skip, limit)
+    # result = await session.execute(select(models.LostItem))
+    # items = result.scalars().all()
     return items
 
 
