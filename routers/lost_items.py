@@ -25,7 +25,7 @@ async def read_lost_items(
         session: AsyncSession = Depends(get_session)
 ):
     crud = BaseCRUD(models.LostItem)
-    items = crud.get_all(session, skip, limit)
+    items = await crud.get_all(session, skip, limit)
     # result = await session.execute(select(models.LostItem))
     # items = result.scalars().all()
     return items

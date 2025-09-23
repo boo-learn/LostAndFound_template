@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 
 from database import get_session
@@ -51,9 +52,26 @@ async def delete_tag(tag_id: int, session: AsyncSession = Depends(get_session)):
 
 # --- Привязка/отвязка к LostItem ---
 @router.put("/lost/{lost_item_id}", response_model=dict)
-async def attach_tags_to_lost_item(lost_item_id: int, payload: schemas.TagIds,
-                                   session: AsyncSession = Depends(get_session)):
-    raise NotImplementedError("Функция еще не реализована")
+async def attach_tags_to_lost_item(
+        lost_item_id: int, payload: schemas.TagIds,
+        session: AsyncSession = Depends(get_session)):
+    result = await session.execute(
+        select(models.LostItem)
+        .where(models.LostItem.id == lost_item_id)
+        .options(selectinload(models.LostItem.tags))
+    )
+    lost_item_db = result.scalar_one_or_none()
+    if not lost_item_db:
+        raise HTTPException(status_code=404, detail="LostItem not found")
+    tag_ids = payload.tag_ids
+    results = await session.execute(
+        select(models.Tag).where(models.Tag.id.in_(tag_ids))
+    )
+    tags = results.scalars().all()
+    for tag in tags:
+        lost_item_db.tags.append(tag)
+    await session.commit()
+    return {"success": True}
 
 
 @router.delete("/{tag_id}/lost/{lost_item_id}", response_model=dict)
