@@ -76,7 +76,23 @@ async def attach_tags_to_lost_item(
 
 @router.delete("/{tag_id}/lost/{lost_item_id}", response_model=dict)
 async def detach_tag_from_lost_item(tag_id: int, lost_item_id: int, session: AsyncSession = Depends(get_session)):
-    raise NotImplementedError("Функция еще не реализована")
+    tag = await session.get(models.Tag, tag_id)
+    if tag is None:
+        raise HTTPException(status_code=404, detail="Tag not found")
+    result = await session.execute(
+        select(models.LostItem)
+        .where(models.LostItem.id == lost_item_id)
+        .options(selectinload(models.LostItem.tags))
+    )
+    lost_item = result.scalar_one_or_none()
+    if lost_item is None:
+        raise HTTPException(status_code=404, detail="LostItem not found")
+
+    if tag in lost_item.tags:
+        lost_item.tags.remove(tag)
+        await session.commit()
+
+    return {"success": True}
 
 
 # --- Привязка/отвязка к FoundItem ---
