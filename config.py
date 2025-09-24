@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     db_name: str = 'LostAndFoundDB'
     db_user: str = 'postgres'
     db_password: str = None  # Password can be optional
+    jwt_secret: str = 'your_strong_secret'
+    jwt_expire_minutes: int = 60
 
     # Other settings (optional)
     debug: bool = False
