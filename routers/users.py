@@ -57,7 +57,10 @@ async def update_user(user_id: int, user_update: schemas.UserUpdate, session: As
 
 
 @router.delete("/{user_id}", response_model=dict)
-async def delete_user(user_id: int, session: AsyncSession = Depends(get_session)):
+async def delete_user(
+        user_id: int, session: AsyncSession = Depends(get_session),
+        current_user:models.User = Depends(get_current_user)
+):
     crud = BaseCRUD(models.User)
     res = await crud.delete(session, user_id)
     if res is None:
